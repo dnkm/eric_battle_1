@@ -6,109 +6,158 @@ using UnityEngine;
 
 
 [System.Serializable]
-public class BaseUnit : MonoBehaviour
+public class BaseUnit : PlayerController
 {
     // Start is called before the first frame update
 
-    public bool isMine = true;
-    public Color spriteColor;
+    private bool isLeft = true;
+    //private BattleUnitHealthBar m_healthBar;
 
     public int groupNum { get; set; }
 
-    public float weaponDamage = 2;
-    public float baseHealth = 100;
+    public float weaponDamage = 0;
+    public float baseHealth = 0;
 
-    private float attactElapsed = 0;
+    protected float attactElapsed = 0;
+    private float moveSpeed = 4.1f;
 
-    enum States
-    {
-        IDLE,
-        RUN,
-        ATTACK,
-        STUCK
-    };
-
-    private States unitState;
-    private GameObject targetedUnit = null;
-
-    private Transform closestEnemy = null;
     
-    private Vector2 velocity;
-    private Rigidbody2D rb2D;
-    private SpriteRenderer spriteR;
+    protected UnitStates unitState;
+    protected Transform closestEnemy = null;
+    //private GameObject targetedUnit = null;
 
     void Start()
     {
-        rb2D = gameObject.GetComponent<Rigidbody2D>();
-        velocity = new Vector2(0f, isMine? 2.1f : -2.1f);
-        spriteR = gameObject.GetComponent<SpriteRenderer>();
-        spriteR.color = spriteColor;
-        unitState = States.RUN;
+        initCharacter();
     }
 
     // Update is called once per frame
     void Update()
     {
-        
-        // RaycastHit2D foundHit = Physics2D.Raycast(transform.position, transform.up, 2, 1<<8);
-        // if (foundHit.collider != null)
-        // {
-        //     print("Found hit");
-        //     unitState = States.IDLE;
-        //     
-        // }
+        closestEnemy = GetClosestEnemy();
+        if (closestEnemy == null)
+        {
+            unitState = UnitStates.RUN;
+        }
+        else
+        {
+            checkState();
+        }
 
-        Debug.DrawRay(transform.position,transform.up , Color.green);
-        
+
+
+        performActions();
+    }
+
+    protected void initCharacter()
+    {
+        m_CapsulleCollider = this.transform.GetComponent<CapsuleCollider2D>();
+        m_Anim = this.transform.Find("model").GetComponent<Animator>();
+        m_rigidbody = this.transform.GetComponent<Rigidbody2D>();
+
+        //m_healthBar = transform.Find("HealthBar").GetComponent<BattleUnitHealthBar>();
+        //m_effect = transform.Find("Effects").GetComponent<BattleUnitEffects>();
+
+        unitState = UnitStates.IDLE;
+    }
+
+    protected void performActions()
+    {
         switch (unitState)
         {
-            case States.IDLE:
-                //m_Anim.Play("Idle");
+            case UnitStates.IDLE:
+                m_Anim.Play("Idle");
                 break;
-            case States.RUN:
-                //m_Anim.Play("Run");
+            case UnitStates.RUN:
+                m_Anim.Play("Run");
+                if (closestEnemy != null)
+                {
+                    transform.position = Vector2.MoveTowards(transform.position, closestEnemy.position, moveSpeed * Time.deltaTime);
+                }
+                else
+                {
+                    float dirMoveSpeed = isLeft ? moveSpeed * -1 : moveSpeed;
+                    transform.Translate(Vector2.right * dirMoveSpeed * Time.deltaTime);
+                }
+
                 break;
-            case States.ATTACK:
-                //m_Anim.Play("Attack");
+            case UnitStates.ATTACK:
+                m_Anim.Play("Attack");
                 AttackActions();
                 break;
-            case States.STUCK:
+            case UnitStates.STUCK:
                 break;
         }
     }
 
-    
-    private void AttackActions()
+    private void checkState()
+    {
+        float dist = Vector2.Distance(closestEnemy.position, transform.position);
+        //print("Distance to other: " + dist);
+
+        float angle = AngleTo(transform.position, closestEnemy.position);
+       // print("Angle to other: " + angle);
+        //if (dist < 1.3f && angle < 45f)
+        if (dist < 1.3f)
+        {
+            unitState = UnitStates.ATTACK;
+        }
+        else if(dist < 1.3f && angle > 80f){
+        
+        }
+        else
+        {
+            unitState = UnitStates.RUN;
+        }
+    }
+
+    private float AngleTo(Vector2 pos, Vector2 target)
+    {
+        Vector2 diference = Vector2.zero;
+
+        if (target.x > pos.x)
+            diference = target - pos;
+        else
+            diference = pos - target;
+
+        return Vector2.Angle(Vector2.right, diference);
+    }
+
+    protected virtual void AttackActions()
     {
         attactElapsed += Time.deltaTime;
         if (attactElapsed >= .5f)
         {
             attactElapsed %= .5f;
-            if (targetedUnit != null && targetedUnit.GetComponent<BaseUnit>())
+            if (closestEnemy != null)
             {
                 //m_effect.PlayAttackAudio();
-                targetedUnit.GetComponent<BaseUnit>().updateDamage(weaponDamage);
+                closestEnemy.GetComponent<BaseUnit>().updateDamage(weaponDamage);
+                FindObjectOfType<FXMaster>().Sword(closestEnemy, closestEnemy.position.x > transform.position.x ? 1 : -1, weaponDamage);
             }
         }
     }
 
-    private Transform GetClosestEnemy()
+    protected Transform GetClosestEnemy()
     {
         Transform bestTarget = null;
         float closestDistanceSqr = Mathf.Infinity;
         Vector3 currentPosition = transform.position;
         BaseUnit[] units = FindObjectsOfType(typeof(BaseUnit)) as BaseUnit[];
-        
+
+//        print("Found OBJ: " + units.Length);
+
         if (units.Length <= 1)
         {
-            unitState = States.RUN;
+            unitState = UnitStates.RUN;
             return null;
         }
 
         foreach (BaseUnit unit in units)
         {
             if (groupNum != unit.groupNum * -1) continue;
-            
+
+
             Vector2 directionToTarget = unit.transform.position - currentPosition;
             float dSqrToTarget = directionToTarget.sqrMagnitude;
 
@@ -119,12 +168,16 @@ public class BaseUnit : MonoBehaviour
             }
         }
 
+        // if (bestTarget == null)
+        // {
+        //     print("bestTarget == null");
+        // }
         return bestTarget;
     }
 
     public void Filp(bool bLeft)
     {
-        isMine = bLeft;
+        isLeft = bLeft;
         transform.localScale = new Vector3(bLeft ? 1 : -1, 1, 1);
     }
 
@@ -135,55 +188,43 @@ public class BaseUnit : MonoBehaviour
         {
             if (groupNum == unit.groupNum)
             {
-                unit.unitState = States.ATTACK;
+                unit.unitState = UnitStates.ATTACK;
             }
         }
     }
-
-   
-    public GameObject GetOpponentTargetUnit()
-    {
-        return targetedUnit;
-    }
+    
+    // public GameObject GetOpponentTargetUnit()
+    // {
+    //     return targetedUnit;
+    // }
 
     public void updateDamage(float damage)
-    {
+    { 
+        
+        
+        //m_effect.PlayDamageEffect(isLeft ? -1 : 1, damage);
         baseHealth -= damage;
-        updateColor();
-        //m_healthBar.setHealthBar(baseHealth / 50);
+
+        //m_healthBar.setHealthBar(baseHealth / 100);
         if (baseHealth <= 0)
         {
-            unitState = States.IDLE;
-            Destroy(gameObject);
-        }
-    }
-    
-    private void updateColor()
-    {
-        float alpha = baseHealth / 50;
-        spriteR.color = new Color(spriteR.color.r, spriteR.color.g, spriteR.color.b, alpha);
-    }
+            m_Anim.Play("Die");
 
-    private void OnCollisionEnter2D(Collision2D col)
-    {
-        
-        if (!col.gameObject.CompareTag(gameObject.tag))
-        {
-            targetedUnit = col.gameObject;
-            unitState = States.ATTACK;
+            if (transform != null)
+            {
+                FindObjectOfType<FXMaster>().Blood(transform);    
+            }
+            
+            //m_effect.PlayBloodEffect(isLeft ? -1 : 1);
+            unitState = UnitStates.IDLE;
+            Destroy(gameObject, 2f);
         }
     }
 
-    private void OnCollisionExit2D(Collision2D other)
+    protected override void LandingEvent()
     {
-        unitState = States.RUN;
-        targetedUnit = null;
-    }
-    void FixedUpdate()
-    {
-        if (unitState == States.RUN)
-        {
-            rb2D.MovePosition(rb2D.position + velocity * Time.fixedDeltaTime);
-        }
+        if (!m_Anim.GetCurrentAnimatorStateInfo(0).IsName("Run") &&
+            !m_Anim.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+            m_Anim.Play("Idle");
     }
 }

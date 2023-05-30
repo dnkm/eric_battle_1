@@ -1,23 +1,80 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BattleController : MonoBehaviour
 {
     private GameObject battleGround;
-    public GameObject baseUnitPrefab;
+    public GameObject baseUnitRedPrefab;
+    public GameObject baseUnitBluePrefab;
 
-    void Start()
+    public GameObject unitArcherPrefab;
+
+    private CanvasUIMaster canvasUIMaster;
+
+    private int totalPlayerUnit, totalEnemyUnit = 0;
+    private float totalTime = 120f; //2 minutes
+
+    void sysInit()
+    {
+        canvasUIMaster = FindObjectOfType<CanvasUIMaster>();
+        if (!canvasUIMaster)
+        {
+            print("[ERR] Canvas Master not assigned!");
+        }
+    }
+
+    void battleInit()
     {
         getBattleGround();
         respawnUnits();
-        
-        //InvokeRepeating("respawnUnits", 0.5f, 25f); 
+        totalPlayerUnit = getNumPlayerUnit();
+        totalEnemyUnit = getNumEnemyUnit();
     }
+
+    void unitMonitor()
+    {
+        canvasUIMaster.setPlayerHealthBar(getNumPlayerUnit(), totalPlayerUnit);
+        canvasUIMaster.setEnemyHealthBar(getNumEnemyUnit(), totalEnemyUnit);
+    }
+
+    void Start()
+    {
+        sysInit();
+        battleInit();
+        InvokeRepeating("unitMonitor", 1f, 1f); //1s delay, repeat every 1s
+    }
+
 
     // Update is called once per frame
     void Update()
     {
+        totalTime -= Time.deltaTime;
+        UpdateLevelTimer(totalTime);
+    }
+
+    public void UpdateLevelTimer(float totalSeconds)
+    {
+        int minutes = Mathf.FloorToInt(totalSeconds / 60f);
+        int seconds = Mathf.RoundToInt(totalSeconds % 60f);
+
+        string formatedSeconds = seconds.ToString();
+
+        if (seconds == 60)
+        {
+            seconds = 0;
+            minutes += 1;
+        }
+
+        canvasUIMaster.updateTimeText(minutes.ToString("00") + ":" + seconds.ToString("00"));
+    }
+
+    private int getNumPlayerUnit()
+    {
+        return GameObject.FindGameObjectsWithTag("Player").Length;
+    }
+
+    private int getNumEnemyUnit()
+    {
+        return GameObject.FindGameObjectsWithTag("Enemy").Length;
     }
 
     void getBattleGround()
@@ -28,157 +85,179 @@ public class BattleController : MonoBehaviour
 
     void respawnUnits()
     {
-
-        //
-        // GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(-4, 4, 0), Quaternion.identity);
-        // _baseUnit.transform.parent = battleGround.transform;
-        // _baseUnit = Instantiate(baseUnitPrefab, new Vector3(-4, 3, 0), Quaternion.identity);
-        // _baseUnit.transform.parent = battleGround.transform;
-        // _baseUnit = Instantiate(baseUnitPrefab, new Vector3(-4, 2, 0), Quaternion.identity);
-        // _baseUnit.transform.parent = battleGround.transform;
-        // _baseUnit = Instantiate(baseUnitPrefab, new Vector3(-4, 1, 0), Quaternion.identity);
-        // _baseUnit.transform.parent = battleGround.transform;
-        // _baseUnit = Instantiate(baseUnitPrefab, new Vector3(-4, 0, 0), Quaternion.identity);
-        // _baseUnit.transform.parent = battleGround.transform;
-        int i = 0;
-        for (i = 4; i < 8; i++)
+        for (int posY = 8; posY < 13; posY++)
         {
+            for (int posX = -20; posX < -17; posX++)
+            {
+                GameObject _baseUnit = Instantiate(baseUnitBluePrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(false);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = 1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.tag = "Player";
+            }
+        }
 
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(Random.Range(-15f ,-12f), i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(false);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = 1;
-            _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
-            _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
-            _baseUnit.tag = "Player";
+        for (int posY = -5; posY < 0; posY++)
+        {
+            for (int posX = -15; posX < -12; posX++)
+            {
+                GameObject _baseUnit = Instantiate(baseUnitBluePrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(false);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = 1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.tag = "Player";
+            }
         }
-  
-      
 
-        
-        for ( i = -2; i < 3; i++)
+
+        for (int posY = -10; posY < 5; posY++)
         {
-         
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(Random.Range(-15f ,-12f), i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(false);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = 2;
-            _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
-            _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
-            _baseUnit.tag = "Player";
+            for (int posX = -20; posX < -17; posX++)
+            {
+                GameObject _baseUnit = Instantiate(baseUnitBluePrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(false);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = 1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.tag = "Player";
+            }
         }
-        
-        for ( i = -8; i < -3; i++)
+
+
+        for (int posY = -18; posY < -13; posY++)
         {
-         
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(-6, i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(false);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = 3;
-            _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
-            _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
-            _baseUnit.tag = "Player";
+            for (int posX = -20; posX < -17; posX++)
+            {
+                GameObject _baseUnit = Instantiate(baseUnitBluePrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(false);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = 1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.tag = "Player";
+            }
         }
-        
-        
-        
-        
+
+
         //Enemy
-        
-        
-        // GameObject temp = Instantiate(baseUnitPrefab, new Vector3(10, 5, 0), Quaternion.identity);
-        // temp.transform.parent = battleGround.transform;
-        // temp.GetComponent<BaseUnit>().Filp(true);
-        // temp.GetComponent<BaseUnit>().groupNum = -1;
-        // temp.GetComponent<BaseUnit>().weaponDamage = 21.2f;
-        // temp.GetComponent<BaseUnit>().baseHealth = 100f;
-        // temp.tag = "Enemy";
-        //
-        
-        for (i = 4; i < 8; i++)
-        {
 
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(Random.Range(12f ,15f), i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(true);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
-            _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
-            _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
-            _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
-        }
-        
-        for ( i = -2; i < 3; i++)
-        {
-         
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(Random.Range(12f ,15f), i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(true);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = -2;
-            _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
-            _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
-            _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
-        }
-        
-        for ( i = -8; i < -3; i++)
-        {
-         
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(Random.Range(12f ,15f), i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(true);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = -3;
-            _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
-            _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
-            _baseUnit.tag = "Enemy";
-        }
-        
-        return;
-        
-        
-        
-        //Dummy Enemy;
-        // GameObject temp = Instantiate(baseUnitPrefab, new Vector3(10, 0, 0), Quaternion.identity);
-        // temp.transform.parent = battleGround.transform;
-        // temp.GetComponent<BaseUnit>().setScale(new Vector3(2.0f,2.0f,2.0f));
-        // temp.GetComponent<BaseUnit>().Filp(true);
-        // temp.GetComponent<BaseUnit>().groupNum = 4;
-        //
-        //
-        // temp = Instantiate(baseUnitPrefab, new Vector3(14, 5, 0), Quaternion.identity);
-        // temp.transform.parent = battleGround.transform;
-        // temp.GetComponent<BaseUnit>().setScale(new Vector3(2.0f,2.0f,2.0f));
-        // temp.GetComponent<BaseUnit>().Filp(true);
-        // temp.GetComponent<BaseUnit>().groupNum = 5;
-        
-        for (i = 4; i < 9; i++)
-        {
 
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(10, i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(true);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+        for (int posY = 4; posY < 10; posY++)
+        {
+            for (int posX = 12; posX < 15; posX++)
+            {
+                GameObject _baseUnit = Instantiate(baseUnitRedPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
         }
 
-        
-        for ( i = -2; i < 3; i++)
+        for (int posY = -15; posY < -9; posY++)
         {
-         
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(10, i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(true);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = -2;
+            for (int posX = 12; posX < 15; posX++)
+            {
+                GameObject _baseUnit = Instantiate(baseUnitRedPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
         }
-        
-        for ( i = -8; i < -3; i++)
+
+
+        for (int posY = -5; posY < 0; posY++)
         {
-         
-            GameObject _baseUnit = Instantiate(baseUnitPrefab, new Vector3(10, i, 0), Quaternion.identity);
-            _baseUnit.transform.parent = battleGround.transform;
-            _baseUnit.GetComponent<BaseUnit>().Filp(true);
-            _baseUnit.GetComponent<BaseUnit>().groupNum = -3;
+            for (int posX = 12; posX < 15; posX++)
+            {
+                GameObject _baseUnit = Instantiate(baseUnitRedPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(8f, 15f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
         }
-        
-        
-        
-        
+
+        for (int posY = 9; posY < 12; posY++)
+        {
+            for (int posX = 20; posX < 22; posX++)
+            {
+                GameObject _baseUnit = Instantiate(unitArcherPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(25f, 35f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
+        }
+
+        for (int posY = 3; posY < 6; posY++)
+        {
+            for (int posX = 20; posX < 22; posX++)
+            {
+                GameObject _baseUnit = Instantiate(unitArcherPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(25f, 35f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
+        }
+
+        for (int posY = -3; posY < 0; posY++)
+        {
+            for (int posX = 20; posX < 22; posX++)
+            {
+                GameObject _baseUnit = Instantiate(unitArcherPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(25f, 35f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
+        }
+
+        for (int posY = -9; posY < -6; posY++)
+        {
+            for (int posX = 20; posX < 22; posX++)
+            {
+                GameObject _baseUnit = Instantiate(unitArcherPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(25f, 35f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
+        }
+
+        for (int posY = -15; posY < -12; posY++)
+        {
+            for (int posX = 20; posX < 22; posX++)
+            {
+                GameObject _baseUnit = Instantiate(unitArcherPrefab, new Vector3(posX, posY, 0), Quaternion.identity);
+                _baseUnit.transform.parent = battleGround.transform;
+                _baseUnit.GetComponent<BaseUnit>().Filp(true);
+                _baseUnit.GetComponent<BaseUnit>().groupNum = -1;
+                _baseUnit.GetComponent<BaseUnit>().weaponDamage = Random.Range(25f, 35f);
+                _baseUnit.GetComponent<BaseUnit>().baseHealth = 100f;
+                _baseUnit.GetComponent<BaseUnit>().tag = "Enemy";
+            }
+        }
     }
 }
